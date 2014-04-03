@@ -10,11 +10,19 @@ w.register('weebullet', 'Lefty', '0.0.1', 'BSD', 'weebullet pushes notifications
 
 w.hook_print("", "irc_privmsg", "", 1, "priv_msg_cb", "")
 
+credentials = {
+    "api_key": ""
+}
+
+for option, default_value in credentials.items():
+    if w.config_get_plugin(option) == "":
+        w.prnt("", w.prefix("error") + "pushbullet: Please set option: %s" % option)
+        w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s STRING" % option)
 
 def send_push(title, body):
 
     apiurl = 'https://api.pushbullet.com/api/pushes'
-    apikey = 'YOUR_API_KEY_HERE'
+    apikey = w.config_get_plugin("api_key")
 
     payload = {'type': 'note', 'title': title, 'body': body}
 
