@@ -9,12 +9,28 @@ import weechat as w
 w.register('weebullet', 'Lefty', '0.0.1', 'BSD', 'weebullet pushes notifications from IRC to Pushbullet.', '', '')
 
 w.hook_print("", "irc_privmsg", "", 1, "priv_msg_cb", "")
+w.hook_command(
+    "send_push_note", #command
+    "send a push note", # description
+    "[message]" # arguments description, 
+    "", #argument
+    "",
+    "",
+    "cmd_send_push_note", "")
 
+credentials = {
+    "api_key": ""
+}
+
+for option, default_value in credentials.items():
+    if w.config_get_plugin(option) == "":
+        w.prnt("", w.prefix("error") + "pushbullet: Please set option: %s" % option)
+        w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s STRING" % option)
 
 def send_push(title, body):
 
     apiurl = 'https://api.pushbullet.com/api/pushes'
-    apikey = 'YOUR_API_KEY_HERE'
+    apikey = w.config_get_plugin("api_key")
 
     payload = {'type': 'note', 'title': title, 'body': body}
 
@@ -24,6 +40,12 @@ def send_push(title, body):
 	return False
     return True
 
+def cmd_send_push_note(data, buffer, args):
+    send_push(
+            title="Manual Notification from weechat",
+            body=args
+            )
+    return w.WEECHAT_RC_OK
 
 def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
         ishilight, prefix, message):
