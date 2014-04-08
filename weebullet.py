@@ -55,6 +55,9 @@ def process_pushbullet_cb(data, url, status, response, err):
         w.prnt("", "[weebullet] Error sending to pushbullet: %s - %s" % (status, url))
         return w.WEECHAT_RC_ERROR
 
+    if status_code is 401 or status_code is 403:
+        w.prnt("", "[weebullet] Invalid API Token: %s" % (w.config_get_plugin("api_key")))
+        return w.WEECHAT_RC_ERROR
     if status_code is not 200:
         w.prnt("", "[weebullet] Error sending to pushbullet: %s - %s - %s" % (url, status_code, body))
         return w.WEECHAT_RC_ERROR
