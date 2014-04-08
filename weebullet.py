@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import requests
 import json
 import re
+import urllib
 
 import weechat as w
 
@@ -18,27 +18,58 @@ w.hook_command(
     "",
     "cmd_send_push_note", "")
 
-credentials = {
+configs = {
+#    "timeout": 20000,
     "api_key": ""
 }
 
-for option, default_value in credentials.items():
+for option, default_value in configs.items():
     if w.config_get_plugin(option) == "":
         w.prnt("", w.prefix("error") + "pushbullet: Please set option: %s" % option)
-        w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s STRING" % option)
+        if type(default_value) == "str":
+            w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s STRING" % option)
+        elif type(default_value) == "int":
+            w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s INT" % option)
+        else:
+            w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s VALUE" % option)
+
+
+def process_pushbullet_cb(data, url, status, response, err):
+    body = None
+    headers = {}
+    lines = response.rstrip().splitlines()
+    status_code = int(lines.pop(0).split()[1])
+    for line in lines:
+        if body == "":
+            body += line
+            continue
+        header_line = line.split(":", 2)
+        if len(header_line) != 2:
+            body = ""
+            continue
+        headers[header_line[0].strip()] = header_line[1].strip()
+
+
+    # response is the string of http body
+    if status == w.WEECHAT_HOOK_PROCESS_ERROR:
+        w.prnt("", "[weebullet] Error sending to pushbullet: %s - %s" % (status, url))
+        return w.WEECHAT_RC_ERROR
+
+    if status_code is 401 or status_code is 403:
+        w.prnt("", "[weebullet] Invalid API Token: %s" % (w.config_get_plugin("api_key")))
+        return w.WEECHAT_RC_ERROR
+    if status_code is not 200:
+        w.prnt("", "[weebullet] Error sending to pushbullet: %s - %s - %s" % (url, status_code, body))
+        return w.WEECHAT_RC_ERROR
+
+    return w.WEECHAT_RC_OK
 
 def send_push(title, body):
-
-    apiurl = 'https://api.pushbullet.com/api/pushes'
     apikey = w.config_get_plugin("api_key")
-
-    payload = {'type': 'note', 'title': title, 'body': body}
-
-    r = requests.post(apiurl, data=payload, auth=(apikey, ''))
-
-    if r.status_code is not 200:
-	return False
-    return True
+    apiurl = "https://%s:@api.pushbullet.com/api/pushes" % (apikey)
+    timeout = 20000 # FIXME - actually use config
+    payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body})
+    w.hook_process_hashtable("url:" + apiurl, { "postfields": payload, "header":"1" }, timeout, "process_pushbullet_cb", "")
 
 def cmd_send_push_note(data, buffer, args):
     send_push(
