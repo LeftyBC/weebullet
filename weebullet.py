@@ -34,10 +34,29 @@ for option, default_value in configs.items():
             w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s VALUE" % option)
 
 
-def process_pushbullet_cb(data, url, return_code, response, err):
+def process_pushbullet_cb(data, url, status, response, err):
+    body = None
+    headers = {}
+    lines = response.rstrip().splitlines()
+    status_code = int(lines.pop(0).split()[1])
+    for line in lines:
+        if body == "":
+            body += line
+            continue
+        header_line = line.split(":", 2)
+        if len(header_line) != 2:
+            body = ""
+            continue
+        headers[header_line[0].strip()] = header_line[1].strip()
+
+
     # response is the string of http body
-    if return_code == w.WEECHAT_HOOK_PROCESS_ERROR:
+    if status == w.WEECHAT_HOOK_PROCESS_ERROR:
         w.prnt("", "[weebullet] Error sending to pushbullet: %s - %s" % (status, url))
+        return w.WEECHAT_RC_ERROR
+
+    if status_code is not 200:
+        w.prnt("", "[weebullet] Error sending to pushbullet: %s - %s - %s" % (url, status_code, body))
         return w.WEECHAT_RC_ERROR
 
     return w.WEECHAT_RC_OK
@@ -47,7 +66,7 @@ def send_push(title, body):
     apiurl = "https://%s:@api.pushbullet.com/api/pushes" % (apikey)
     timeout = 20000 # FIXME - actually use config
     payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body})
-    w.hook_process_hashtable("url:" + apiurl, { "postfields": payload }, timeout, "process_pushbullet_cb", "")
+    w.hook_process_hashtable("url:" + apiurl, { "postfields": payload, "header":"1" }, timeout, "process_pushbullet_cb", "")
 
 def cmd_send_push_note(data, buffer, args):
     send_push(
