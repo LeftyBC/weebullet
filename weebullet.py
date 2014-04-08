@@ -6,7 +6,7 @@ import urllib
 
 import weechat as w
 
-w.register('weebullet', 'Lefty', '0.0.1', 'BSD', 'weebullet pushes notifications from IRC to Pushbullet.', '', '')
+w.register('weebullet', 'Lefty', '0.2.0', 'BSD', 'weebullet pushes notifications from IRC to Pushbullet.', '', '')
 
 w.hook_print("", "irc_privmsg", "", 1, "priv_msg_cb", "")
 w.hook_command(
