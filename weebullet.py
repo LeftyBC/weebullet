@@ -85,7 +85,8 @@ def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
     am_away = w.buffer_get_string(bufferp, 'localvar_away')
 
     if not am_away:
-	w.prnt("", "[weebullet] Not away, skipping notification")
+	# TODO: make debug a configurable
+	#w.prnt("", "[weebullet] Not away, skipping notification")
 	return w.WEECHAT_RC_OK
 
     notif_body = u"<%s> %s" % (
