@@ -66,7 +66,7 @@ def process_pushbullet_cb(data, url, status, response, err):
 
 def send_push(title, body):
     apikey = w.config_get_plugin("api_key")
-    apiurl = "https://%s:@api.pushbullet.com/api/pushes" % (apikey)
+    apiurl = "https://%s@api.pushbullet.com/v2/pushes" % (apikey)
     timeout = 20000 # FIXME - actually use config
     payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body})
     w.hook_process_hashtable("url:" + apiurl, { "postfields": payload, "header":"1" }, timeout, "process_pushbullet_cb", "")
