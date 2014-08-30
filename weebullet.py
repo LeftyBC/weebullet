@@ -105,7 +105,7 @@ def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
 	)
 
     # Highlight (your nick is quoted)
-    elif (ishilight == "1"):
+    elif (ishilight == 1):
         bufname = (w.buffer_get_string(bufferp, "short_name") or
                 w.buffer_get_string(bufferp, "name"))
 	send_push(
