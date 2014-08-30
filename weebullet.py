@@ -6,7 +6,7 @@ import urllib
 
 import weechat as w
 
-w.register('weebullet', 'Lefty', '0.2.0', 'BSD', 'weebullet pushes notifications from IRC to Pushbullet.', '', '')
+w.register('weebullet', 'Lefty', '0.3.0', 'BSD', 'weebullet pushes notifications from IRC to Pushbullet.', '', '')
 
 w.hook_print("", "irc_privmsg", "", 1, "priv_msg_cb", "")
 w.hook_command(
@@ -105,7 +105,7 @@ def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
 	)
 
     # Highlight (your nick is quoted)
-    elif (ishilight == "1"):
+    elif (str(ishilight) == "1"):
         bufname = (w.buffer_get_string(bufferp, "short_name") or
                 w.buffer_get_string(bufferp, "name"))
 	send_push(
