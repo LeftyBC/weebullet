@@ -68,8 +68,9 @@ def send_push(title, body):
     apikey = w.config_get_plugin("api_key")
     apiurl = "https://%s@api.pushbullet.com/v2/pushes" % (apikey)
     timeout = 20000 # FIXME - actually use config
-    payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body})
-    w.hook_process_hashtable("url:" + apiurl, { "postfields": payload, "header":"1" }, timeout, "process_pushbullet_cb", "")
+    if len(title) is not 0 or len(body) is not 0:
+	    payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body})
+	    w.hook_process_hashtable("url:" + apiurl, { "postfields": payload, "header":"1" }, timeout, "process_pushbullet_cb", "")
 
 def cmd_send_push_note(data, buffer, args):
     send_push(
