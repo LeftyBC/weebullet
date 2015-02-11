@@ -22,7 +22,7 @@ w.hook_command(
     "weebullet", 
     "pushes notifications from IRC to Pushbullet",
     "[command]",
-    "Available commands are:\n||listdevices : prints a list of all devices associated with your Pushbullet API key\n||help : prints config options and defaults",
+    "Available commands are:\n    listdevices : prints a list of all devices associated with your Pushbullet API key\n    help : prints config options and defaults",
     "",
     "cmd_help", ""
 )
