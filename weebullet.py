@@ -16,18 +16,19 @@ w.hook_command(
     "", #argument
     "",
     "",
-    "cmd_send_push_note", "")
+    "cmd_send_push_note", ""
+)
 w.hook_command(
     "weebullet", 
     "pushes notifications from IRC to Pushbullet",
     "[command]",
     "Available commands are:\n||listdevices : prints a list of all devices associated with your Pushbullet API key\n||help : prints config options and defaults",
     "",
-    "cmd_help", "")
-
+    "cmd_help", ""
+)
 configs = {
     "api_key": "",
-	"away_only": "1",
+    "away_only": "1",
     "device_iden": "all"
 }
 
@@ -118,9 +119,9 @@ def send_push(title, body):
     if len(title) is not 0 or len(body) is not 0:
         deviceiden = w.config_get_plugin("device_iden")
         if deviceiden == "all":
-		    payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body.encode('utf-8')})
+            payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body.encode('utf-8')})
         else:
-		    payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body.encode('utf-8'), 'device_iden':deviceiden})
+            payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body.encode('utf-8'), 'device_iden':deviceiden})
         w.hook_process_hashtable("url:" + apiurl, { "postfields": payload, "header":"1" }, timeout, "process_pushbullet_cb", "")
 
 def cmd_send_push_note(data, buffer, args):
@@ -140,13 +141,13 @@ def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
         am_away = True
 
     if not am_away:
-	# TODO: make debug a configurable
-	#w.prnt("", "[weebullet] Not away, skipping notification")
-	return w.WEECHAT_RC_OK
+        # TODO: make debug a configurable
+        #w.prnt("", "[weebullet] Not away, skipping notification")
+        return w.WEECHAT_RC_OK
 
     notif_body = u"<%s> %s" % (
         prefix.decode('utf-8'),
-	message.decode('utf-8')
+        message.decode('utf-8')
     )
 
     # Check that it's in a "/q" buffer and that I'm not the one writing the msg
@@ -154,18 +155,18 @@ def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
     is_notify_private = re.search(r'(^|,)notify_private(,|$)', tagsn) is not None
     # PM (query)
     if (is_pm and is_notify_private):
-	send_push(
-		title="Privmsg from %s" % prefix.decode('utf-8'),
-		body=notif_body
-	)
+        send_push(
+            title="Privmsg from %s" % prefix.decode('utf-8'),
+            body=notif_body
+        )
 
     # Highlight (your nick is quoted)
     elif (str(ishilight) == "1"):
         bufname = (w.buffer_get_string(bufferp, "short_name") or
-                w.buffer_get_string(bufferp, "name"))
-	send_push(
-		title="Highlight in %s" % bufname.decode('utf-8'),
-		body=notif_body
-	)
+            w.buffer_get_string(bufferp, "name"))
+        send_push(
+            title="Highlight in %s" % bufname.decode('utf-8'),
+            body=notif_body
+        )
 
     return w.WEECHAT_RC_OK
