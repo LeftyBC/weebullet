@@ -17,22 +17,69 @@ w.hook_command(
     "",
     "",
     "cmd_send_push_note", "")
+w.hook_command(
+    "weebullet", 
+    "pushes notifications from IRC to Pushbullet",
+    "[command]",
+    "Available commands are:\n||listdevices : prints a list of all devices associated with your Pushbullet API key\n||help : prints config options and defaults",
+    "",
+    "cmd_help", "")
 
 configs = {
-#    "timeout": 20000,
-    "api_key": ""
+    "api_key": "",
+	"away_only": "1",
+    "device_iden": "all"
 }
 
 for option, default_value in configs.items():
     if w.config_get_plugin(option) == "":
-        w.prnt("", w.prefix("error") + "pushbullet: Please set option: %s" % option)
-        if type(default_value) == "str":
-            w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s STRING" % option)
-        elif type(default_value) == "int":
-            w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s INT" % option)
+        if configs[option] == "":
+            w.prnt("", w.prefix("error") + "pushbullet: Please set option: %s" % option)
+            if type(default_value) == "str":
+                w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s STRING" % option)
+            elif type(default_value) == "int":
+                w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s INT" % option)
+            else:
+                w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s VALUE" % option)
         else:
-            w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s VALUE" % option)
+            w.config_set_plugin(option, configs[option])
 
+def process_devicelist_cb(data, url, status, response, err):
+    try:
+        devices = json.loads(response)["devices"]
+        w.prnt("", "Device List:")
+        for device in devices:
+            if device["pushable"]:
+                if "nickname" in device:
+                    w.prnt("", "---\n%s" % device["nickname"])
+                else:
+                    w.prnt("", "---\nUnnamed")
+                w.prnt("", "%s" % device["iden"])
+    except KeyError:
+        w.prnt("", "[weebullet] Error accessing device list: %s" % response)
+        return w.WEECHAT_RC_ERROR
+    return w.WEECHAT_RC_OK
+
+def cmd_help(data, buffer, args):
+    if(args == "listdevices"):
+        apikey = w.config_get_plugin("api_key")
+        apiurl = "https://%s@api.pushbullet.com/v2/devices" % (apikey)
+        w.hook_process("url:"+apiurl, 20000, "process_devicelist_cb", "")
+    else:
+        w.prnt("", """
+Weebullet requires an API key from your Pushbullet account to work. Set your API key with:
+    /set plugins.var.python.weebullet.api_key <KEY>
+
+Weebullet will by default only send notifications when you are marked away on IRC. You can change this with:
+    /set plugins.var.python.weebullet.away_only [0|1]
+
+Weebullet will by default send to all devices associated with your Pushbullet account. You can change this with:
+    /set plugins.var.python.weebullet.device_iden <ID>
+
+You can get a list of your devices from the Pushbullet website, or by using
+    /weebullet listdevices
+""")
+    return w.WEECHAT_RC_OK
 
 def process_pushbullet_cb(data, url, status, response, err):
     body = None
@@ -69,13 +116,17 @@ def send_push(title, body):
     apiurl = "https://%s@api.pushbullet.com/v2/pushes" % (apikey)
     timeout = 20000 # FIXME - actually use config
     if len(title) is not 0 or len(body) is not 0:
-	    payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body})
-	    w.hook_process_hashtable("url:" + apiurl, { "postfields": payload, "header":"1" }, timeout, "process_pushbullet_cb", "")
+        deviceiden = w.config_get_plugin("device_iden")
+        if deviceiden == "all":
+		    payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body.encode('utf-8')})
+        else:
+		    payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body.encode('utf-8'), 'device_iden':deviceiden})
+        w.hook_process_hashtable("url:" + apiurl, { "postfields": payload, "header":"1" }, timeout, "process_pushbullet_cb", "")
 
 def cmd_send_push_note(data, buffer, args):
     send_push(
             title="Manual Notification from weechat",
-            body=args
+            body=args.decode('utf-8')
             )
     return w.WEECHAT_RC_OK
 
@@ -83,7 +134,10 @@ def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
         ishilight, prefix, message):
     """Sends highlighted message to be printed on notification"""
 
-    am_away = w.buffer_get_string(bufferp, 'localvar_away')
+    if w.config_get_plugin("away_only") == "1":
+        am_away = w.buffer_get_string(bufferp, 'localvar_away')
+    else:
+        am_away = True
 
     if not am_away:
 	# TODO: make debug a configurable
