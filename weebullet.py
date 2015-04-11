@@ -23,11 +23,11 @@ w.hook_command(
     "pushes notifications from IRC to Pushbullet",
     "[command]",
     "Available commands are:\n" \
-    "help        : prints config options and defaults\n" \
-    "listdevices : prints a list of all devices associated with your Pushbullet API key\n" \
-    "listignores : prints a list of channels that highlights won't be pushed for\n" \
-    "ignore      : adds a channel to the blacklist\n" \
-    "unignore    : removes a channel from the blacklist",
+    "   help        : prints config options and defaults\n" \
+    "   listdevices : prints a list of all devices associated with your Pushbullet API key\n" \
+    "   listignores : prints a list of channels that highlights won't be pushed for\n" \
+    "   ignore      : adds a channel to the blacklist\n" \
+    "   unignore    : removes a channel from the blacklist",
     "",
     "cmd_help", ""
 )
