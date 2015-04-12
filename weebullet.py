@@ -6,6 +6,9 @@ import urllib
 
 import weechat as w
 
+# Constant used to check if configs are required
+REQUIRED = '_required'
+
 w.register('weebullet', 'Lefty', '0.3.1', 'BSD', 'weebullet pushes notifications from IRC to Pushbullet.', '', '')
 
 w.hook_print("", "irc_privmsg", "", 1, "priv_msg_cb", "")
@@ -32,7 +35,7 @@ w.hook_command(
     "cmd_help", ""
 )
 configs = {
-    "api_key": "",
+    "api_key": REQUIRED,
     "away_only": "1",
     "device_iden": "all",
     "ignored_channels": ""
@@ -40,7 +43,7 @@ configs = {
 
 for option, default_value in configs.items():
     if w.config_get_plugin(option) == "":
-        if configs[option] == "":
+        if configs[option] == REQUIRED:
             w.prnt("", w.prefix("error") + "pushbullet: Please set option: %s" % option)
             if type(default_value) == "str":
                 w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s STRING" % option)
