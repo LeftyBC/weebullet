@@ -70,10 +70,16 @@ def process_devicelist_cb(data, url, status, response, err):
         return w.WEECHAT_RC_ERROR
     return w.WEECHAT_RC_OK
 
+def get_ignored_channels():
+    ignored_channels = w.config_get_plugin("ignored_channels")
+    if ignored_channels == "":
+        return []
+    else:
+        return [channel.strip() for channel in ignored_channels.split(',')]
+
 def cmd_help(data, buffer, args):
     # Get current list of ignored channels in list form
-    ignored_channels = w.config_get_plugin("ignored_channels")
-    ignored_channels = [channel.strip() for channel in ignored_channels.split(',')]
+    ignored_channels = get_ignored_channels()
 
     # Used for checking for ignore/unignore commands and getting the arguments
     ignore_command = re.match("^ignore\s+(.+)", args)
@@ -202,8 +208,7 @@ def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
         bufname = (w.buffer_get_string(bufferp, "short_name") or
             w.buffer_get_string(bufferp, "name"))
 
-        ignored_channels = w.config_get_plugin("ignored_channels")
-        ignored_channels = [channel.strip() for channel in ignored_channels.split(',')]
+        ignored_channels = get_ignored_channels()
 
         if bufname not in ignored_channels:
             send_push(
