@@ -17,7 +17,15 @@ Requires an API key from http://pushbullet.com and a recentish version of Weecha
 
 `/weebullet listdevices` - retrieves a list of your pushable devices and their nicknames
 
+`/weebullet listignores` - retrieves a list of ignored channels
+
+`/weebullet ignore` - ignores a given channel or channels
+
+`/weebullet unignore` - unignores a given channel or channels
+
 ### Optional settings
 `/set plugins.var.python.weebullet.away_only [0|1]` set to `0` if you wish to always receive notifications, or only when you are marked away (default `1`)
 
 `/set plugins.var.python.weebullet.device_iden [DEVICE_ID|all]` if you wish to be notified only on a specific device, or on all devices (default `all`)
+
+`/set plugins.var.python.weebullet.ignored_channels [#channel1[, #channel2[, #channel3[, ...]]]]` if you wish to set ignored channels manually (default blank)
