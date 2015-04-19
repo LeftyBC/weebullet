@@ -6,35 +6,44 @@ import urllib
 
 import weechat as w
 
+# Constant used to check if configs are required
+REQUIRED = '_required'
+
 w.register('weebullet', 'Lefty', '0.3.1', 'BSD', 'weebullet pushes notifications from IRC to Pushbullet.', '', '')
 
 w.hook_print("", "irc_privmsg", "", 1, "priv_msg_cb", "")
 w.hook_command(
     "send_push_note", #command
     "send a push note", # description
-    "[message]" # arguments description, 
+    "[message]" # arguments description,
     "", #argument
     "",
     "",
     "cmd_send_push_note", ""
 )
 w.hook_command(
-    "weebullet", 
+    "weebullet",
     "pushes notifications from IRC to Pushbullet",
     "[command]",
-    "Available commands are:\n    listdevices : prints a list of all devices associated with your Pushbullet API key\n    help : prints config options and defaults",
+    "Available commands are:\n" \
+    "   help        : prints config options and defaults\n" \
+    "   listdevices : prints a list of all devices associated with your Pushbullet API key\n" \
+    "   listignores : prints a list of channels that highlights won't be pushed for\n" \
+    "   ignore      : adds a channel to the blacklist\n" \
+    "   unignore    : removes a channel from the blacklist",
     "",
     "cmd_help", ""
 )
 configs = {
-    "api_key": "",
+    "api_key": REQUIRED,
     "away_only": "1",
-    "device_iden": "all"
+    "device_iden": "all",
+    "ignored_channels": ""
 }
 
 for option, default_value in configs.items():
     if w.config_get_plugin(option) == "":
-        if configs[option] == "":
+        if configs[option] == REQUIRED:
             w.prnt("", w.prefix("error") + "pushbullet: Please set option: %s" % option)
             if type(default_value) == "str":
                 w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s STRING" % option)
@@ -61,8 +70,42 @@ def process_devicelist_cb(data, url, status, response, err):
         return w.WEECHAT_RC_ERROR
     return w.WEECHAT_RC_OK
 
+def get_ignored_channels():
+    ignored_channels = w.config_get_plugin("ignored_channels")
+    if ignored_channels == "":
+        return []
+    else:
+        return [channel.strip() for channel in ignored_channels.split(',')]
+
 def cmd_help(data, buffer, args):
-    if(args == "listdevices"):
+    # Get current list of ignored channels in list form
+    ignored_channels = get_ignored_channels()
+
+    # Used for checking for ignore/unignore commands and getting the arguments
+    ignore_command = re.match("^ignore\s+(.+)", args)
+    unignore_command = re.match("^unignore\s+(.+)", args)
+
+    if(ignore_command is not None):
+        channels_to_ignore = ignore_command.group(1).split(' ')
+
+        for channel in channels_to_ignore:
+            if channel not in ignored_channels:
+                ignored_channels.append(channel)
+
+        w.config_set_plugin("ignored_channels", ','.join(ignored_channels))
+        w.prnt("", "Updated. Ignored channels: %s" % w.config_get_plugin("ignored_channels"))
+    elif(unignore_command is not None):
+        channels_to_unignore = unignore_command.group(1).split(' ')
+
+        for channel in channels_to_unignore:
+            if channel in ignored_channels:
+                ignored_channels.remove(channel)
+
+        w.config_set_plugin("ignored_channels", ','.join(ignored_channels))
+        w.prnt("", "Updated. Ignored channels: %s" % w.config_get_plugin("ignored_channels"))
+    elif(args == "listignores"):
+        w.prnt("", "Ignored channels: %s" % w.config_get_plugin("ignored_channels"))
+    elif(args == "listdevices"):
         apikey = w.config_get_plugin("api_key")
         apiurl = "https://%s@api.pushbullet.com/v2/devices" % (apikey)
         w.hook_process("url:"+apiurl, 20000, "process_devicelist_cb", "")
@@ -164,9 +207,17 @@ def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
     elif (str(ishilight) == "1"):
         bufname = (w.buffer_get_string(bufferp, "short_name") or
             w.buffer_get_string(bufferp, "name"))
-        send_push(
-            title="Highlight in %s" % bufname.decode('utf-8'),
-            body=notif_body
-        )
+
+        ignored_channels = get_ignored_channels()
+
+        if bufname not in ignored_channels:
+            send_push(
+                title="Highlight in %s" % bufname.decode('utf-8'),
+                body=notif_body
+            )
+        else:
+            # TODO: make debug a configurable
+            #w.prnt("", "[weebullet] Ignored channel, skipping notification")
+            pass
 
     return w.WEECHAT_RC_OK
