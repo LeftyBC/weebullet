@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# vim: set fileencoding=utf8 :
 
 import json
 import re
