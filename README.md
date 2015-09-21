@@ -30,4 +30,4 @@ Requires an API key from http://pushbullet.com and a recentish version of Weecha
 
 `/set plugins.var.python.weebullet.ignored_channels [#channel1[, #channel2[, #channel3[, ...]]]]` if you wish to set ignored channels manually (default blank)
 
-`/set plugins.var.python.weebullet.min_notify_interval [0|NUMBER]` to set a minimum intervalin seconds between notifications (default 0, disabled)
+`/set plugins.var.python.weebullet.min_notify_interval [0|NUMBER]` to set a minimum interval in seconds between notifications (default 0, disabled)
