@@ -37,14 +37,14 @@ w.hook_command(
 )
 configs = {
     "api_key": REQUIRED,
-    "away_only": "1",          # only send when away
-    "device_iden": "all",      # send to all devices
-    "ignored_channels": "",    # no ignored channels
-    "min_notify_interval": 0,  # seconds, don't notify more often than this
-    "debug": 0,                # enable debugging
+    "away_only": "1",            # only send when away
+    "device_iden": "all",        # send to all devices
+    "ignored_channels": "",      # no ignored channels
+    "min_notify_interval": "0",  # seconds, don't notify more often than this
+    "debug": "0",                # enable debugging
 }
 
-last_notification = None
+last_notification = 0   # 0 seconds from the epoch
 
 for option, default_value in configs.items():
     if w.config_get_plugin(option) == "":
@@ -61,7 +61,7 @@ for option, default_value in configs.items():
 
 
 def debug(msg):
-    if w.config_get_plugin("debug") is not 0:
+    if str(w.config_get_plugin("debug")) is not "0":
         w.prnt("", "[weebullet] DEBUG: %s" % str(msg))
 
 def process_devicelist_cb(data, url, status, response, err):
