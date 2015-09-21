@@ -3,13 +3,14 @@
 import json
 import re
 import urllib
+import time
 
 import weechat as w
 
 # Constant used to check if configs are required
 REQUIRED = '_required'
 
-w.register('weebullet', 'Lefty', '0.3.1', 'BSD', 'weebullet pushes notifications from IRC to Pushbullet.', '', '')
+w.register('weebullet', 'Lefty', '0.4.0', 'BSD', 'weebullet pushes notifications from IRC to Pushbullet.', '', '')
 
 w.hook_print("", "irc_privmsg", "", 1, "priv_msg_cb", "")
 w.hook_command(
@@ -36,10 +37,14 @@ w.hook_command(
 )
 configs = {
     "api_key": REQUIRED,
-    "away_only": "1",
-    "device_iden": "all",
-    "ignored_channels": ""
+    "away_only": "1",          # only send when away
+    "device_iden": "all",      # send to all devices
+    "ignored_channels": "",    # no ignored channels
+    "min_notify_interval": 0,  # seconds, don't notify more often than this
+    "debug": 0,                # enable debugging
 }
+
+last_notification = None
 
 for option, default_value in configs.items():
     if w.config_get_plugin(option) == "":
@@ -53,6 +58,11 @@ for option, default_value in configs.items():
                 w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s VALUE" % option)
         else:
             w.config_set_plugin(option, configs[option])
+
+
+def debug(msg):
+    if w.config_get_plugin("debug") is not 0:
+        w.prnt("", "[weebullet] DEBUG: %s" % str(msg))
 
 def process_devicelist_cb(data, url, status, response, err):
     try:
@@ -120,6 +130,9 @@ Weebullet will by default only send notifications when you are marked away on IR
 Weebullet will by default send to all devices associated with your Pushbullet account. You can change this with:
     /set plugins.var.python.weebullet.device_iden <ID>
 
+Weebullet can ignore repeated notifications if they arrive too often.  You can set this with (0 or blank to disable):
+    /set plugins.var.python.weebullet.min_notify_interval <NUMBER>
+
 You can get a list of your devices from the Pushbullet website, or by using
     /weebullet listdevices
 """)
@@ -156,6 +169,22 @@ def process_pushbullet_cb(data, url, status, response, err):
     return w.WEECHAT_RC_OK
 
 def send_push(title, body):
+    global last_notification
+
+    interval = w.config_get_plugin("min_notify_interval")
+    if interval is not None and interval != "" and int(interval) != 0:
+        interval = int(interval)
+
+        earliest_notification = last_notification + int(interval)
+
+        if last_notification is not None and time.time() <= earliest_notification:
+            debug("Too soon since last notification, skipping")
+            return w.WEECHAT_RC_OK
+
+    last_notification = time.time()
+
+    debug("Sending push.  Title: [%s], body: [%s]" % (title, body))
+
     apikey = w.config_get_plugin("api_key")
     apiurl = "https://%s@api.pushbullet.com/v2/pushes" % (apikey)
     timeout = 20000 # FIXME - actually use config
@@ -185,7 +214,7 @@ def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
 
     if not am_away:
         # TODO: make debug a configurable
-        #w.prnt("", "[weebullet] Not away, skipping notification")
+        debug("Not away, skipping notification")
         return w.WEECHAT_RC_OK
 
     notif_body = u"<%s> %s" % (
@@ -216,8 +245,6 @@ def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
                 body=notif_body
             )
         else:
-            # TODO: make debug a configurable
-            #w.prnt("", "[weebullet] Ignored channel, skipping notification")
-            pass
+            debug("[weebullet] Ignored channel, skipping notification in %s" % bufname.decode('utf-8'))
 
     return w.WEECHAT_RC_OK
