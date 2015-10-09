@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# vim: set fileencoding=utf8 :
+# vim: set fileencoding=utf8 ts=4 sw=4 expandtab :
 
 import json
 import re
@@ -11,14 +11,19 @@ import weechat as w
 # Constant used to check if configs are required
 REQUIRED = '_required'
 
-w.register('weebullet', 'Lefty', '0.4.0', 'BSD', 'weebullet pushes notifications from IRC to Pushbullet.', '', '')
+w.register('weebullet',
+           'Lefty',
+           '0.5.0',
+           'BSD',
+           'weebullet pushes notifications from IRC to Pushbullet.',
+           '', '')
 
 w.hook_print("", "irc_privmsg", "", 1, "priv_msg_cb", "")
 w.hook_command(
-    "send_push_note", #command
-    "send a push note", # description
-    "[message]" # arguments description,
-    "", #argument
+    "send_push_note",      # command
+    "send a push note",    # description
+    "[message]"            # arguments description,
+    "",                    # argument
     "",
     "",
     "cmd_send_push_note", ""
@@ -27,11 +32,13 @@ w.hook_command(
     "weebullet",
     "pushes notifications from IRC to Pushbullet",
     "[command]",
-    "Available commands are:\n" \
-    "   help        : prints config options and defaults\n" \
-    "   listdevices : prints a list of all devices associated with your Pushbullet API key\n" \
-    "   listignores : prints a list of channels that highlights won't be pushed for\n" \
-    "   ignore      : adds a channel to the blacklist\n" \
+    "Available commands are:\n"
+    "   help        : prints config options and defaults\n"
+    "   listdevices : prints a list of all devices associated"
+    "                 with your Pushbullet API key\n"
+    "   listignores : prints a list of channels that highlights "
+    "                 won't be pushed for\n"
+    "   ignore      : adds a channel to the blacklist\n"
     "   unignore    : removes a channel from the blacklist",
     "",
     "cmd_help", ""
@@ -41,8 +48,11 @@ configs = {
     "away_only": "1",            # only send when away
     "device_iden": "all",        # send to all devices
     "ignored_channels": "",      # no ignored channels
-    "min_notify_interval": "0",  # seconds, don't notify more often than this
+    "min_notify_interval": "0",  # seconds, don't notify
+                                 #   more often than this
     "debug": "0",                # enable debugging
+    "ignore_on_relay": "0",      # if relay connected,
+                                 #   don't send push notification
 }
 
 last_notification = 0   # 0 seconds from the epoch
@@ -50,7 +60,8 @@ last_notification = 0   # 0 seconds from the epoch
 for option, default_value in configs.items():
     if w.config_get_plugin(option) == "":
         if configs[option] == REQUIRED:
-            w.prnt("", w.prefix("error") + "pushbullet: Please set option: %s" % option)
+            w.prnt("", w.prefix("error") +
+                   "pushbullet: Please set option: %s" % option)
             if type(default_value) == "str":
                 w.prnt("", "pushbullet: /set plugins.var.python.weebullet.%s STRING" % option)
             elif type(default_value) == "int":
@@ -64,6 +75,7 @@ for option, default_value in configs.items():
 def debug(msg):
     if str(w.config_get_plugin("debug")) is not "0":
         w.prnt("", "[weebullet] DEBUG: %s" % str(msg))
+
 
 def process_devicelist_cb(data, url, status, response, err):
     try:
@@ -81,12 +93,14 @@ def process_devicelist_cb(data, url, status, response, err):
         return w.WEECHAT_RC_ERROR
     return w.WEECHAT_RC_OK
 
+
 def get_ignored_channels():
     ignored_channels = w.config_get_plugin("ignored_channels")
     if ignored_channels == "":
         return []
     else:
         return [channel.strip() for channel in ignored_channels.split(',')]
+
 
 def cmd_help(data, buffer, args):
     # Get current list of ignored channels in list form
@@ -119,7 +133,7 @@ def cmd_help(data, buffer, args):
     elif(args == "listdevices"):
         apikey = w.config_get_plugin("api_key")
         apiurl = "https://%s@api.pushbullet.com/v2/devices" % (apikey)
-        w.hook_process("url:"+apiurl, 20000, "process_devicelist_cb", "")
+        w.hook_process("url:" + apiurl, 20000, "process_devicelist_cb", "")
     else:
         w.prnt("", """
 Weebullet requires an API key from your Pushbullet account to work. Set your API key with:
@@ -139,6 +153,7 @@ You can get a list of your devices from the Pushbullet website, or by using
 """)
     return w.WEECHAT_RC_OK
 
+
 def process_pushbullet_cb(data, url, status, response, err):
     body = None
     headers = {}
@@ -154,7 +169,6 @@ def process_pushbullet_cb(data, url, status, response, err):
             continue
         headers[header_line[0].strip()] = header_line[1].strip()
 
-
     # response is the string of http body
     if status == w.WEECHAT_HOOK_PROCESS_ERROR:
         w.prnt("", "[weebullet] Error sending to pushbullet: %s - %s" % (status, url))
@@ -168,6 +182,7 @@ def process_pushbullet_cb(data, url, status, response, err):
         return w.WEECHAT_RC_ERROR
 
     return w.WEECHAT_RC_OK
+
 
 def send_push(title, body):
     global last_notification
@@ -184,28 +199,48 @@ def send_push(title, body):
 
     last_notification = time.time()
 
+    # check to see if the relay is connected, ignore if so
+    check_relays = w.config_string_to_boolean(w.config_get_plugin('ignore_on_relay'))
+    CONNECTED_RELAY = False
+    if check_relays:
+        infolist = w.infolist_get('relay', '', '')
+        if infolist:
+            while w.infolist_next(infolist):
+                status = w.infolist_string(infolist, 'status_string')
+                if status == 'connected':
+                    CONNECTED_RELAY = True
+                    break
+            w.infolist_free(infolist)
+
+    if CONNECTED_RELAY is True:
+        # we have a relay conected, don't notify
+        debug("Relay is connected, not sending push.")
+        return w.WEECHAT_RC_OK
+
     debug("Sending push.  Title: [%s], body: [%s]" % (title, body))
 
     apikey = w.config_get_plugin("api_key")
     apiurl = "https://%s@api.pushbullet.com/v2/pushes" % (apikey)
-    timeout = 20000 # FIXME - actually use config
+    timeout = 20000  # FIXME - actually use config
     if len(title) is not 0 or len(body) is not 0:
         deviceiden = w.config_get_plugin("device_iden")
         if deviceiden == "all":
             payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body.encode('utf-8')})
         else:
-            payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body.encode('utf-8'), 'device_iden':deviceiden})
-        w.hook_process_hashtable("url:" + apiurl, { "postfields": payload, "header":"1" }, timeout, "process_pushbullet_cb", "")
+            payload = urllib.urlencode({'type': 'note', 'title': title, 'body': body.encode('utf-8'), 'device_iden': deviceiden})
+        w.hook_process_hashtable("url:" + apiurl, {"postfields": payload, "header": "1"}, timeout, "process_pushbullet_cb", "")
+
 
 def cmd_send_push_note(data, buffer, args):
     send_push(
-            title="Manual Notification from weechat",
-            body=args.decode('utf-8')
-            )
+        title="Manual Notification from weechat",
+        body=args.decode('utf-8'))
     return w.WEECHAT_RC_OK
 
-def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
-        ishilight, prefix, message):
+
+def priv_msg_cb(data, bufferp, uber_empty,
+                tagsn, isdisplayed,
+                ishilight, prefix, message):
     """Sends highlighted message to be printed on notification"""
 
     if w.config_get_plugin("away_only") == "1":
@@ -236,7 +271,7 @@ def priv_msg_cb(data, bufferp, uber_empty, tagsn, isdisplayed,
     # Highlight (your nick is quoted)
     elif (str(ishilight) == "1"):
         bufname = (w.buffer_get_string(bufferp, "short_name") or
-            w.buffer_get_string(bufferp, "name"))
+                   w.buffer_get_string(bufferp, "name"))
 
         ignored_channels = get_ignored_channels()
 
