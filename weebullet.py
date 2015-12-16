@@ -13,7 +13,7 @@ REQUIRED = '_required'
 
 w.register('weebullet',
            'Lefty',
-           '0.5.0',
+           '0.5.1',
            'BSD',
            'weebullet pushes notifications from IRC to Pushbullet.',
            '', '')
