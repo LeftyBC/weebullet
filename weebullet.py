@@ -13,7 +13,7 @@ REQUIRED = '_required'
 
 w.register('weebullet',
            'Lefty',
-           '0.5.0',
+           '0.5.1',
            'BSD',
            'weebullet pushes notifications from IRC to Pushbullet.',
            '', '')
@@ -131,12 +131,12 @@ def cmd_help(data, buffer, args):
     elif(args == "listignores"):
         w.prnt("", "Ignored channels: %s" % w.config_get_plugin("ignored_channels"))
     elif(args == "listdevices"):
-        apikey = w.config_get_plugin("api_key")
+        apikey = w.string_eval_expression(w.config_get_plugin("api_key"), {}, {}, {})
         apiurl = "https://%s@api.pushbullet.com/v2/devices" % (apikey)
         w.hook_process("url:" + apiurl, 20000, "process_devicelist_cb", "")
     else:
         w.prnt("", """
-Weebullet requires an API key from your Pushbullet account to work. Set your API key with:
+Weebullet requires an API key from your Pushbullet account to work. Set your API key with (evaluated):
     /set plugins.var.python.weebullet.api_key <KEY>
 
 Weebullet will by default only send notifications when you are marked away on IRC. You can change this with:
@@ -175,7 +175,7 @@ def process_pushbullet_cb(data, url, status, response, err):
         return w.WEECHAT_RC_ERROR
 
     if status_code is 401 or status_code is 403:
-        w.prnt("", "[weebullet] Invalid API Token: %s" % (w.config_get_plugin("api_key")))
+        w.prnt("", "[weebullet] Invalid API Token: %s" % (w.string_eval_expression(w.config_get_plugin("api_key"), {}, {}, {})))
         return w.WEECHAT_RC_ERROR
     if status_code is not 200:
         w.prnt("", "[weebullet] Error sending to pushbullet: %s - %s - %s" % (url, status_code, body))
@@ -219,7 +219,7 @@ def send_push(title, body):
 
     debug("Sending push.  Title: [%s], body: [%s]" % (title, body))
 
-    apikey = w.config_get_plugin("api_key")
+    apikey = w.string_eval_expression(w.config_get_plugin("api_key"), {}, {}, {})
     apiurl = "https://%s@api.pushbullet.com/v2/pushes" % (apikey)
     timeout = 20000  # FIXME - actually use config
     if len(title) is not 0 or len(body) is not 0:
