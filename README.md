@@ -31,3 +31,5 @@ Requires an API key from http://pushbullet.com and a recentish version of Weecha
 `/set plugins.var.python.weebullet.ignored_channels [#channel1[, #channel2[, #channel3[, ...]]]]` if you wish to set ignored channels manually (default blank)
 
 `/set plugins.var.python.weebullet.min_notify_interval [0|NUMBER]` to set a minimum interval in seconds between notifications (default 0, disabled)
+
+`/set plugins.var.python.weebullet.ignore_on_relay [0|1]` set to 1 if you want to suppress push notifications when a client is connected to your weechat via weechat-relay (default `0`)
