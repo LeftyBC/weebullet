@@ -46,6 +46,7 @@ w.hook_command(
 configs = {
     "api_key": REQUIRED,
     "away_only": "1",            # only send when away
+    "inactive_only": "1",        # only send if buffer inactive
     "device_iden": "all",        # send to all devices
     "ignored_channels": "",      # no ignored channels
     "min_notify_interval": "0",  # seconds, don't notify
@@ -252,6 +253,15 @@ def priv_msg_cb(data, bufferp, uber_empty,
         # TODO: make debug a configurable
         debug("Not away, skipping notification")
         return w.WEECHAT_RC_OK
+
+    # If 'inactive_only' is enabled, we need to check if the notification is
+    # coming from the active buffer.
+    if w.config_get_plugin("inactive_only") == "1":
+        if w.current_buffer() == bufferp:
+            # The notification came from the current buffer - don't notify
+            debug("Notification came from the active buffer, "
+                  "skipping notification")
+            return w.WEECHAT_RC_OK
 
     notif_body = u"<%s> %s" % (
         prefix.decode('utf-8'),
