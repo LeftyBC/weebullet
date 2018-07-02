@@ -2,7 +2,7 @@
 
 import json
 import re
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import time
 
 import weechat as w
@@ -72,7 +72,7 @@ def register():
 
 
 def load_settings():
-    for (option, default_value) in configs.items():
+    for (option, default_value) in list(configs.items()):
         if w.config_get_plugin(option) == '':
             if configs[option] == '_required':
                 w.prnt('', 'missing plugins.var.python.weebullet.{}'.format(option))
@@ -361,13 +361,13 @@ def send_push(title, body):
     if len(title) != 0 or len(body) != 0:
         deviceiden = w.config_get_plugin('devices')
         if deviceiden == 'all':
-            payload = urllib.urlencode({
+            payload = urllib.parse.urlencode({
                 'type': 'note',
                 'title': title,
                 'body': body.encode('utf-8')
             })
         else:
-            payload = urllib.urlencode({
+            payload = urllib.parse.urlencode({
                 'type': 'note',
                 'title': title,
                 'body': body.encode('utf-8'),
