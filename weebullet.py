@@ -107,29 +107,26 @@ def cmd_help(data, buffer, args):
     # Get current list of ignored channels in list form
     ignored_channels = get_ignored_channels()
 
-    # Used for checking for ignore/unignore commands and getting the arguments
-    ignore_command = re.match("^ignore\s+(.+)", args)
-    unignore_command = re.match("^unignore\s+(.+)", args)
+    # a map of what to do to what when one of the following commands is executed
+    commands = {
+        'ignore': lambda channel: ignored_channels.append(channel),
+        'unignore': lambda channel: ignored_channels.remove(channel),
+    }
 
-    if(ignore_command is not None):
-        channels_to_ignore = ignore_command.group(1).split(' ')
+    for command in commands:
+        command_regex = re.match("^" + command + "\s+(.+)", args)
+        if command_regex is not None:
+            action = commands[command]
 
-        for channel in channels_to_ignore:
-            if channel not in ignored_channels:
-                ignored_channels.append(channel)
+            new_channels = command_regex.group(1).split(' ')
+            for new_channel in new_channels:
+                commands[command](new_channel)
 
-        w.config_set_plugin("ignored_channels", ','.join(ignored_channels))
-        w.prnt("", "Updated. Ignored channels: %s" % w.config_get_plugin("ignored_channels"))
-    elif(unignore_command is not None):
-        channels_to_unignore = unignore_command.group(1).split(' ')
+            w.config_set_plugin('ignored_channels', ', '.join(ignored_channels))
 
-        for channel in channels_to_unignore:
-            if channel in ignored_channels:
-                ignored_channels.remove(channel)
+            return w.WEECHAT_RC_OK
 
-        w.config_set_plugin("ignored_channels", ','.join(ignored_channels))
-        w.prnt("", "Updated. Ignored channels: %s" % w.config_get_plugin("ignored_channels"))
-    elif(args == "listignores"):
+    if(args == "listignores"):
         w.prnt("", "Ignored channels: %s" % w.config_get_plugin("ignored_channels"))
     elif(args == "listdevices"):
         apikey = w.string_eval_expression(w.config_get_plugin("api_key"), {}, {}, {})
