@@ -5,33 +5,34 @@ Weechat script to push notifications to Pushbullet.
 Requires an API key from http://pushbullet.com and a recentish version of Weechat with Python support enabled.
 
 ### Setup
+
 - Place `weebullet.py` in `~/.weechat/python`
 - `/script load weebullet.py` (or `/python load weebullet.py` for newer weechats)
 - `/set plugins.var.python.weebullet.api_key YOUR_API_KEY`
 - Enjoy!
 
-### Additional commands
-`/send_push_note`  - sends a push manually from weechat
+### Commands
 
-`/weebullet` - without arguments, prints a help message
+| Command                     | Description |
+|---|---|
+| `/weebullet ignore`         | adds to the list of ignored channels |
+| `/weebullet unignore`       | removes from the list of ignored channels |
+| `/weebullet subscribe`      | adds to the list of subscribed channels |
+| `/weebullet unsubscribe`    | removes from the list of subscribed channels |
+| `/weebullet listignored`    | list ignored channels |
+| `/weebullet listsubscribed` | list subscribed channels |
+| `/weebullet listdevices`    | list devices associated with your pushbullet API key |
+| `/weebullet test`           | send a test notification to the devices in notify_devices |
+| `/weebullet help`           | prints this help message |
 
-`/weebullet listdevices` - retrieves a list of your pushable devices and their nicknames
+### Settings
 
-`/weebullet listignores` - retrieves a list of ignored channels
-
-`/weebullet ignore` - ignores a given channel or channels
-
-`/weebullet unignore` - unignores a given channel or channels
-
-### Optional settings
-`/set plugins.var.python.weebullet.away_only [0|1]` set to `0` if you wish to always receive notifications, or only when you are marked away (default `1`)
-
-`/set plugins.var.python.weebullet.inactive_only [0|1]` set to `0` to receive notifications for your active buffer, or `1` to skip notifications for the active buffer (default `1`)
-
-`/set plugins.var.python.weebullet.device_iden [DEVICE_ID|all]` if you wish to be notified only on a specific device, or on all devices (default `all`)
-
-`/set plugins.var.python.weebullet.ignored_channels [#channel1[, #channel2[, #channel3[, ...]]]]` if you wish to set ignored channels manually (default blank)
-
-`/set plugins.var.python.weebullet.min_notify_interval [0|NUMBER]` to set a minimum interval in seconds between notifications (default 0, disabled)
-
-`/set plugins.var.python.weebullet.ignore_on_relay [0|1]` set to 1 if you want to suppress push notifications when a client is connected to your weechat via weechat-relay (default `0`)
+| Setting             | Description |
+|---|---|
+| `api_key`             | your pushbullet API key **(required)** |
+| `away_only`           | send only when marked as away<br>values: `0` or `1`; default: `1` |
+| `inactive_only`       | send only when the message is in an inactive buffer<br>values: `0` or `1`; default: `0` |
+| `ignore_on_relay`     | ignore notifications when a relay is connected<br>values: `0` or `1`; default: `0` |
+| `notify_devices`      | list of device identifiers to notify<br>value: comma separated device identifiers, default: `all` |
+| `min_notify_interval` | minimum number of seconds to wait before another notification<br>value: integer number of seconds, default: `60` |
+| `api_timeout`         | number of seconds to api request timeout<br>value: integer number of seconds, default: `20` |
