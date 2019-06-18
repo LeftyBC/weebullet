@@ -6,6 +6,7 @@ Requires an API key from http://pushbullet.com and a recentish version of Weecha
 
 ### Setup
 - Place `weebullet.py` in `~/.weechat/python`
+- To autoload weebullet on weechat's startup add `weebullet.py` to `~/.weechat/python/autoload`
 - `/script load weebullet.py` (or `/python load weebullet.py` for newer weechats)
 - `/set plugins.var.python.weebullet.api_key YOUR_API_KEY`
 - Enjoy!
