@@ -281,7 +281,6 @@ def interval_limit_check():
     global last_notification
 
     earliest_allowed = last_notification + interval
-    last_notification = time.time()
 
     return time.time() < earliest_allowed
 
@@ -306,7 +305,7 @@ def relay_check():
 def get_buf_name(bufferp):
     short_name = w.buffer_get_string(bufferp, 'short_name')
     name = w.buffer_get_string(bufferp, 'name')
-    return (short_name or name).decode('utf-8')
+    return (short_name or name)
 
 
 def is_ignored(bufferp):
@@ -340,26 +339,28 @@ def message_hook(
     skip = skip or (is_ignored(bufferp) and regular_channel)
     skip = skip or (not is_displayed)
     skip = skip or (not is_highlighted and regular_channel)
-
+    
     if skip:
         return w.WEECHAT_RC_OK
 
     if is_pm:
-        title = 'PM from {}'.format(prefix.decode('utf-8'))
+        title = 'PM from {}'.format(prefix)
     else:
-        title = 'Message on {} from {}'.format(get_buf_name(bufferp), prefix.decode('utf-8'))
+        title = 'Message on {} from {}'.format(get_buf_name(bufferp), prefix)
 
-    send_push(title=title, body=message.decode('utf-8'))
+    send_push(title=title, body=message)
 
     return w.WEECHAT_RC_OK
 
 
 def send_push(title, body):
+    global last_notification
     api_key = get_api_key()
     apiurl = 'https://{}@api.pushbullet.com/v2/pushes'.format(api_key)
     timeout = int(w.config_get_plugin('api_timeout')) * 1000
     if len(title) != 0 or len(body) != 0:
         deviceiden = w.config_get_plugin('devices')
+        last_notification = time.time()
         if deviceiden == 'all':
             payload = urllib.parse.urlencode({
                 'type': 'note',
